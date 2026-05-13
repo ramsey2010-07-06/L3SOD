@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fruit Fiesta Match - Juicy Memory Game</title>
+  <style>
+    * {
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #1a7f2e 0%, #0c5e20 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Poppins', 'Fredoka One', 'Comic Neue', system-ui, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* main game panel */
+    .game-container {
+      background: rgba(255, 227, 147, 0.9);
+      border-radius: 80px 80px 60px 60px;
+      box-shadow: 0 25px 40px rgba(0, 0, 0, 0.4), inset 0 1px 4px rgba(255, 255, 200, 0.8);
+      padding: 25px 25px 35px;
+      max-width: 800px;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.2rem;
+      margin: 0 0 8px 0;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, #FFB347, #FF5E3A);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    h1 span {
+      font-size: 2.5rem;
+    }
+
+    .score-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      background: #FDF8E7;
+      padding: 12px 25px;
+      border-radius: 100px;
+      margin: 15px 0 20px;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05), 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    .score-box, .best-box {
+      background: #2c2c2c;
+      padding: 6px 18px;
+      border-radius: 40px;
+      color: #FFE484;
+      font-weight: bold;
+      font-size: 1.6rem;
+      text-align: center;
+      box-shadow: inset 0 -1px 0 #5e5e5e, 0 5px 0 #0f0f0f;
+    }
+
+    .score-box label, .best-box label {
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      color: #f9d56e;
+      margin-bottom: 3px;
+    }
+
+    .score-box span, .best-box span {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #FFD966;
+      line-height: 1;
+    }
+
+    .message-area {
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      background: #FFECB3;
+      margin: 8px 0 15px;
+      padding: 10px;
+      border-radius: 50px;
+      color: #BF5B17;
+      transition: 0.2s;
+      box-shadow: inset 0 0 0 2px white, 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* grid of fruit cards + empty buttons */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      justify-items: center;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    /* card style (both fruit cards and empty buttons) */
+    .card {
+      background: #FFF9E8;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 110px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 12px 0 #B97F2E;
+      transition: 0.1s linear;
+      border: 2px solid #FFC857;
+      transform: translateY(-3px);
+    }
+
+    .card:active {
+      transform: translateY(5px);
+      box-shadow: 0 6px 0 #B97F2E;
+    }
+
+    /* empty button specific style — same class but extra border variation */
+    .card.empty-btn {
+      background: #ECE3CA;
+      box-shadow: 0 8px 0 #8B6946;
+      color: #a59070;
+      font-size: 2rem;
+      font-weight: normal;
+      border: 2px dashed #FFAA33;
+      cursor: pointer;
+      backdrop-filter: blur(2px);
+    }
+
+    .card.empty-btn span {
+      font-size: 1.7rem;
+      opacity: 0.9;
+    }
+
+    /* fruit card special glow */
+    .card.fruit-card {
+      background: radial-gradient(circle at 30% 20%, #FFF6CF, #FFE0A3);
+    }
+
+    /* matched cards: disabled, no click effect, appearance change */
+    .card.matched {
+      visibility: visible;
+      opacity: 0.5;
+      filter: grayscale(0.3);
+      background: #cfe2cf;
+      box-shadow: 0 5px 0 #6f4f2a;
+      transform: translateY(4px);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* empty button when disabled (no effect) */
+    .card.empty-btn.disabled-empty {
+      pointer-events: none;
+      opacity: 0.7;
+      filter: blur(0.4px);
+      cursor: default;
+    }
+
+    button.control {
+      background: #F58634;
+      border: none;
+      font-size: 1.4rem;
+      font-weight: bold;
+      padding: 12px 25px;
+      margin-top: 12px;
+      color: white;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 7px 0 #9B4215;
+      transition: 0.07s linear;
+      font-family: inherit;
+      width: 100%;
+      letter-spacing: 1px;
+    }
+
+    button.control:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #9B4215;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.8rem;
+      margin-top: 18px;
+      color: #3a2a1e;
+      font-weight: 500;
+    }
+
+    @media (max-width: 550px) {
+      .grid {
+        gap: 10px;
+      }
+      .card {
+        font-size: 2.3rem;
+      }
+      .score-box span, .best-box span {
+        font-size: 1.4rem;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <h1>
+    <span>🍍</span> FRUIT FIESTA <span>🍑</span>
+  </h1>
+  <div class="score-panel">
+    <div class="score-box">
+      <label>🍎 MATCHES</label>
+      <span id="scoreValue">0</span>
+    </div>
+    <div class="best-box">
+      <label>🏆 BEST</label>
+      <span id="bestValue">0</span>
+    </div>
+  </div>
+  <div class="message-area" id="statusMsg">
+    🌟 Match the fruits! Click two cards 🌟
+  </div>
+
+  <!-- 4x3 dynamic grid : 12 slots (6 fruit pairs + 4 empty buttons = 10 cards? wait need 12 slots: 6 pairs = 12 fruits? no that would be 12 fruits, then add empty buttons? but 4 empty + 12 fruits =16 cards but 4x3=12. we need 12 slots total.
+   clever: use 6 fruit pairs = 12 fruit cards. but 12 slots already full, no room for empty buttons. Requirement says "add empty button" so we must include at least one empty button inside game. 
+   best approach: 4x4 grid (16 tiles): 6 fruit pairs (12 fruit cards) + 4 empty buttons. That's perfect! 4x4 visually balanced. Empty buttons act as "distractors" but they can be clicked and do nothing (or give penalty hint?). I'll make empty buttons clickable but they reset selection / give a light penalty message. To make it playful: clicking empty button cancels current selection and reduces no match but doesn't lose score - just silly "bummer" feel. Also they are "EMPTY" and cannot match. Great interactive design. -->
+  <div class="grid" id="gameGrid"></div>
+
+  <button class="control" id="resetGameBtn">🍉 SHAKE & NEW GAME 🍊</button>
+  <div class="footer-note">
+    💡 Match identical fruit pairs. Empty buttons reset your pick & give small penalty!
+  </div>
+</div>
+
+<script>
+  // ---------- FRUIT THEME ----------
+  const FRUIT_SET = [
+    "🍎", "🍊", "🍇", "🍒", "🥝", "🍓", "🍑", "🍉", "🍋", "🍈"
+  ];
+  // we will use 6 distinct fruits for 6 pairs = 12 fruit cards
+  const PAIR_COUNT = 6;        // 6 pairs = 12 fruit cards
+  const EMPTY_BUTTON_COUNT = 4; // 4 EMPTY BUTTONS
+  const TOTAL_CARDS = PAIR_COUNT * 2 + EMPTY_BUTTON_COUNT; // 12 + 4 = 16
+
+  // grid dimension 4x4
+  const GRID_SIZE = 4;
+
+  let gameBoard = [];         // stores objects: { type: 'fruit', value: '🍎', matched: false, cardId } OR { type: 'empty', matched: false (always false), emptyId }
+  let cardElements = [];      // reference DOM elements
+  let selectedIndex = null;   // currently selected card index (first card)
+  let lockBoard = false;       // waiting for animation/timeout between matches
+  let currentScore = 0;        // number of matched pairs
+  let bestScore = 0;
+
+  // UI elements
+  const scoreSpan = document.getElementById('scoreValue');
+  const bestSpan = document.getElementById('bestValue');
+  const statusDiv = document.getElementById('statusMsg');
+  const gridContainer = document.getElementById('gameGrid');
+
+  // helper: load best score from local storage
+  function loadBestScore() {
+    const saved = localStorage.getItem('fruitFiestaBest');
+    if (saved !== null && !isNaN(parseInt(saved))) {
+      bestScore = parseInt(saved);
+    } else {
+      bestScore = 0;
+    }
+    bestSpan.innerText = bestScore;
+  }
+
+  function updateBestScoreUI() {
+    bestSpan.innerText = bestScore;
+    if (currentScore > bestScore) {
+      bestScore = currentScore;
+      bestSpan.innerText = bestScore;
+      localStorage.setItem('fruitFiestaBest', bestScore);
+      // show celebration
+      statusDiv.innerHTML = "🎉 NEW HIGH SCORE! 🎉";
+      setTimeout(() => {
+        if (currentScore < PAIR_COUNT) statusDiv.innerHTML = "🍍 Keep matching! 🍍";
+      }, 1500);
+    }
+  }
+
+  // Shuffle using Fisher-Yates (on array)
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // generate fresh board with fruit pairs and empty buttons
+  function generateBoard() {
+    // 1. generate fruit pairs
+    let fruitsPool = [];
+    // pick first PAIR_COUNT fruits from FRUIT_SET (distinct)
+    const selectedFruits = FRUIT_SET.slice(0, PAIR_COUNT);
+    for (let i = 0; i < selectedFruits.length; i++) {
+      const fruit = selectedFruits[i];
+      // add two identical fruits for a pair
+      fruitsPool.push({ type: 'fruit', value: fruit, matched: false });
+      fruitsPool.push({ type: 'fruit', value: fruit, matched: false });
+    }
+    // 2. generate empty buttons (distinct dummy objects)
+    let emptiesPool = [];
+    for (let i = 0; i < EMPTY_BUTTON_COUNT; i++) {
+      emptiesPool.push({ type: 'empty', matched: false, emptyId: i });
+    }
+    // combine and shuffle
+    let combined = [...fruitsPool, ...emptiesPool];
+    // ensure total is TOTAL_CARDS
+    if (combined.length !== TOTAL_CARDS) console.warn("card count mismatch");
+    combined = shuffleArray(combined);
+    // convert to full board objects with additional tracking
+    const board = combined.map((item, idx) => {
+      if (item.type === 'fruit') {
+        return {
+          id: idx,
+          type: 'fruit',
+          fruitValue: item.value,
+          matched: false,
+        };
+      } else {
+        return {
+          id: idx,
+          type: 'empty',
+          matched: false, // empty buttons never matched, just clickable
+        };
+      }
+    });
+    return board;
+  }
+
+  // reset game state
+  function initGame() {
+    gameBoard = generateBoard();
+    selectedIndex = null;
+    lockBoard = false;
+    currentScore = 0;
+    scoreSpan.innerText = currentScore;
+    updateBestScoreUI(); // just show best, don't reset if high
+    statusDiv.innerHTML = "🍍 New round! Pick two matching fruits 🍇";
+    renderGrid();
+  }
+
+  // render the entire grid from gameBoard array
+  function renderGrid() {
+    gridContainer.innerHTML = '';
+    cardElements = [];
+    for (let i = 0; i < gameBoard.length; i++) {
+      const card = gameBoard[i];
+      const button = document.createElement('div');
+      button.classList.add('card');
+      
+      if (card.type === 'fruit') {
+        button.classList.add('fruit-card');
+        // if matched, show fruit but disabled style (but still show fruit ? matched we show fruit but grayed)
+        if (card.matched) {
+          button.classList.add('matched');
+          button.innerText = card.fruitValue;
+          button.style.pointerEvents = 'none';
+        } else {
+          // unrevealed fruit: show fruit face always? We want memory game style: show fruit only after clicked? Wait standard match game requires face down? But we want fruit visible to make it vibrant? But original description "game of fruits and add empty button" no specific hidden mechanics. However classic match pairs usually hidden. But it's more fun to have fruit visible? Actually I will make it "always visible" but matching pairs only counts when two identical fruits are clicked consecutively. Since cards are revealed all the time, it's more like "find identical pair" direct game. But that would be too trivial. But to make challenge: BUT we have empty buttons that break selection. I'll design: All fruit cards always show fruit icon. Player must click two identical fruits sequentially. If they pick same fruit card twice, deselect. If they pick two different fruits, selection resets and penalty message. If they pick empty button, selection resets + minor annoyance. And also "matched" fruits get disabled and half opacity. So it's a fast-paced matching game. It's straightforward & colorful!
+          button.innerText = card.fruitValue;
+        }
+      } 
+      else { // empty button
+        button.classList.add('empty-btn');
+        if (card.matched) {
+          // empty won't be matched but keep consistency
+          button.classList.add('disabled-empty');
+        }
+        // empty button displays blank symbol or special emoji
+        button.innerHTML = '<span>🕳️</span>';
+        // additional empty effect
+      }
+  
+      // add event listener directly
+      button.addEventListener('click', (function(idx) {
+        return function() { onCardClick(idx); };
+      })(i));
+      
+      gridContainer.appendChild(button);
+      cardElements.push(button);
+    }
+    // Also sync any visual for matched fruit or disabled empty
+    for (let i=0; i<gameBoard.length; i++) {
+      const card = gameBoard[i];
+      const el = cardElements[i];
+      if (card.type === 'fruit' && card.matched) {
+        el.classList.add('matched');
+        el.style.pointerEvents = 'none';
+      } else if (card.type === 'fruit' && !card.matched) {
+        el.classList.remove('matched');
+        el.style.pointerEvents = 'auto';
+        el.innerText = card.fruitValue;
+      }
+      if (card.type === 'empty') {
+        if (card.matched) {
+          // not used but safe
+          el.classList.add('disabled-empty');
+        } else {
+          el.classList.remove('disabled-empty');
+          el.innerHTML = '<span>🕳️</span>';
+        }
+      }
+    }
+  }
+
+  // handling click on a card
+  function onCardClick(clickedIdx) {
+    // if board is locked or game finished (all matched) handle
+    if (lockBoard) {
+      statusDiv.innerHTML = "⏳ Wait, animation in progress... ⏳";
+      return;
+    }
+    const clickedCard = gameBoard[clickedIdx];
+    
+    // if it's a fruit that is already matched, ignore
+    if (clickedCard.type === 'fruit' && clickedCard.matched) {
+      statusDiv.innerHTML = "🍬 Already matched fruit! Pick another. 🍬";
+      return;
+    }
+    
+    // if no card selected yet
+    if (selectedIndex === null) {
+      // empty button case: if first click on empty, show message and do not select.
+      if (clickedCard.type === 'empty') {
+        statusDiv.innerHTML = "😵 Empty hole! You lost your chance. No selection made. 😵";
+        // penalty small: visually but no score loss, just annoyance.
+        flashEmptyPenalty(clickedIdx);
+        return;
+      }
+      // select fruit
+      selectedIndex = clickedIdx;
+      highlightCard(clickedIdx, true);
+      statusDiv.innerHTML = `✨ Selected ${clickedCard.fruitValue}. Pick its match! ✨`;
+      return;
+    }
+    
+    // already selected a card -> handle second selection
+    const firstIdx = selectedIndex;
+    const firstCard = gameBoard[firstIdx];
+    const secondCard = clickedCard;
+    
+    // if clicking on the same card: deselect
+    if (firstIdx === clickedIdx) {
+      clearSelected();
+      statusDiv.innerHTML = "🍉 Same fruit, selection cleared. Try again! 🍉";
+      return;
+    }
+    
+    // if second card is empty button: penalty: clear selection, reduce nothing but show tease
+    if (secondCard.type === 'empty') {
+      statusDiv.innerHTML = "💨 Oops! Empty button absorbed your pick! Selection cleared. 💨";
+      flashEmptyPenalty(clickedIdx);
+      clearSelected();
+      // small penalty effect but no score reduction.
+      return;
+    }
+    
+    // both are fruits now: check match
+    if (firstCard.type === 'fruit' && secondCard.type === 'fruit') {
+      // if both fruit values match AND none of them is matched
+      if (firstCard.fruitValue === secondCard.fruitValue && !firstCard.matched && !secondCard.matched) {
+        // MATCH SUCCESS
+        firstCard.matched = true;
+        secondCard.matched = true;
+        currentScore++;
+        scoreSpan.innerText = currentScore;
+        
+        // update best
+        if (currentScore > bestScore) {
+          bestScore = currentScore;
+          bestSpan.innerText = bestScore;
+          localStorage.setItem('fruitFiestaBest', bestScore);
+          statusDiv.innerHTML = "🎉 MATCH! +1 🎉 NEW HIGH SCORE! 🎉";
+        } else {
+          statusDiv.innerHTML = "🍧 PERFECT MATCH! +1 point! 🍧";
+        }
+        
+        // update UI for matched cards
+        updateCardUI(firstIdx);
+        updateCardUI(clickedIdx);
+        
+        clearSelected();  // remove selection styles
+        // check win condition
+        if (currentScore === PAIR_COUNT) {
+          statusDiv.innerHTML = "🏆✨ YOU WON! ALL FRUITS MATCHED! ✨🏆";
+          lockBoard = true;
+          setTimeout(() => {
+            statusDiv.innerHTML = "🎊 Click 'New Game' to play again! 🎊";
+          }, 1800);
+        } else {
+          // all good, no lock
+        }
+      } 
+      else {
+        // mismatch: different fruits
+        statusDiv.innerHTML = `❌ Mismatch! "${firstCard.fruitValue}" ≠ "${secondCard.fruitValue}". Try again! ❌`;
+        // flash mismatch on both cards
+        flashMismatch(firstIdx, clickedIdx);
+        clearSelected(); // remove highlight
+        
+        // Also optional little penalty? Not score, just reset selection
+        lockBoard = true;
+        setTimeout(() => {
+          lockBoard = false;
+          // re-render to remove temporary effect
+          renderGrid(); // resets entire grid highlight? but highlight is by class, we must restore.
+          // but we cleared selectedIndex, plus we need avoid highlight re-apply. Re-render will remove any temporary extra classes.
+          // However, matching ones keep .matched, fine
+        }, 600);
+      }
+    } else {
+      // Fallback
+      clearSelected();
+      statusDiv.innerHTML = "Something weird, try again.";
+    }
+  }
+  
+  function flashMismatch(idxA, idxB) {
+    const elA = cardElements[idxA];
+    const elB = cardElements[idxB];
+    if (elA) {
+      elA.style.transition = "0.07s";
+      elA.style.backgroundColor = "#FFB3A7";
+      setTimeout(() => { if(elA) elA.style.backgroundColor = ""; }, 300);
+    }
+    if (elB) {
+      elB.style.backgroundColor = "#FFB3A7";
+      setTimeout(() => { if(elB) elB.style.backgroundColor = ""; }, 300);
+    }
+  }
+  
+  function flashEmptyPenalty(idx) {
+    const el = cardElements[idx];
+    if (el) {
+      el.style.transform = "scale(0.95)";
+      el.style.backgroundColor = "#d4c2a1";
+      setTimeout(() => {
+        if(el) {
+          el.style.transform = "";
+          el.style.backgroundColor = "";
+        }
+      }, 200);
+    }
+  }
+  
+  function highlightCard(idx, enable) {
+    if (!cardElements[idx]) return;
+    if (enable) {
+      cardElements[idx].style.boxShadow = "0 0 0 4px gold, 0 12px 0 #B97F2E";
+      cardElements[idx].style.transform = "translateY(-3px) scale(1.02)";
+    } else {
+      cardElements[idx].style.boxShadow = "";
+      cardElements[idx].style.transform = "";
+    }
+  }
+  
+  function clearSelected() {
+    if (selectedIndex !== null) {
+      highlightCard(selectedIndex, false);
+      selectedIndex = null;
+    }
+  }
+  
+  function updateCardUI(idx) {
+    const card = gameBoard[idx];
+    const el = cardElements[idx];
+    if (!el) return;
+    if (card.type === 'fruit') {
+      if (card.matched) {
+        el.classList.add('matched');
+        el.style.pointerEvents = 'none';
+        el.innerText = card.fruitValue;
+      } else {
+        el.classList.remove('matched');
+        el.style.pointerEvents = 'auto';
+        el.innerText = card.fruitValue;
+      }
+    } else if (card.type === 'empty') {
+      // nothing special
+      el.innerHTML = '<span>🕳️</span>';
+    }
+  }
+  
+  // reset game fully
+  function resetAndNewGame() {
+    if (lockBoard) lockBoard = false;
+    initGame();
+  }
+  
+  // extra sync re-render after any visual locks
+  window.onload = () => {
+    loadBestScore();
+    initGame();
+    document.getElementById('resetGameBtn').addEventListener('click', () => {
+      resetAndNewGame();
+    });
+  };
+</script>
+</body>
+</html>
